@@ -1,0 +1,32 @@
+{
+  "projects": [
+    {
+      "name": "Contributor Onboarding",
+      "owner": "Mona",
+      "status": "On track",
+      "recentActivity": "Published the refreshed contributor checklist and requested feedback from the team.",
+      "priority": "High"
+    },
+    {
+      "name": "Release Readiness",
+      "owner": "Jordan Lee",
+      "status": "In review",
+      "recentActivity": "Completed the release candidate walkthrough and is tracking two remaining follow-ups.",
+      "priority": "Medium"
+    },
+    {
+      "name": "Insights Dashboard",
+      "owner": "Priya Shah",
+      "status": "Planning",
+      "recentActivity": "Outlined the first set of metrics and scheduled a discovery session with stakeholders.",
+      "priority": "Low"
+    },
+    {
+      "name": "Community Events",
+      "owner": "Alex Rivera",
+      "status": "Active",
+      "recentActivity": "Confirmed speakers for the next meetup and opened registration to the community.",
+      "priority": "High"
+    }
+  ]
+}

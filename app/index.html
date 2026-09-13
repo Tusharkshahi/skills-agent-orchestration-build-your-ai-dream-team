@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A quick overview of team project health and activity.">
+    <title>Project Pulse</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="dashboard">
+      <header class="page-header">
+        <p class="eyebrow">Team workspace</p>
+        <h1>Project Pulse</h1>
+        <p class="intro">A clear view of what the team is building, what changed recently, and where attention is needed.</p>
+      </header>
+
+      <main id="main-content">
+        <section class="projects-section" aria-labelledby="projects-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Overview</p>
+              <h2 id="projects-heading">Current projects</h2>
+            </div>
+            <p id="project-count" class="project-count" aria-live="polite"></p>
+          </div>
+
+          <div id="loading-state" class="dashboard-state" role="status">
+            <p>Loading project updates...</p>
+          </div>
+
+          <div id="empty-state" class="dashboard-state" hidden>
+            <h3>No projects to show</h3>
+            <p>Project updates will appear here when they are available.</p>
+          </div>
+
+          <div id="error-state" class="dashboard-state dashboard-state--error" role="alert" hidden>
+            <h3>Project updates are unavailable</h3>
+            <p id="error-message">We could not load the project data. Please try again later.</p>
+          </div>
+
+          <div id="project-list" class="project-grid" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const loadingState = document.querySelector("#loading-state");
+        const emptyState = document.querySelector("#empty-state");
+        const errorState = document.querySelector("#error-state");
+        const errorMessage = document.querySelector("#error-message");
+        const projectList = document.querySelector("#project-list");
+        const projectCount = document.querySelector("#project-count");
+        const requiredFields = ["name", "owner", "status", "recentActivity", "priority"];
+
+        const setStateVisibility = (state, isVisible) => {
+          state.hidden = !isVisible;
+        };
+
+        const createTextElement = (tagName, className, text) => {
+          const element = document.createElement(tagName);
+          element.className = className;
+          element.textContent = text;
+          return element;
+        };
+
+        const createMetadataItem = (label, value, className) => {
+          const item = document.createElement("div");
+          item.className = "project-card__metadata-item";
+
+          const labelElement = createTextElement("dt", "project-card__label", label);
+          const valueElement = createTextElement("dd", className, value);
+          item.append(labelElement, valueElement);
+          return item;
+        };
+
+        const createProjectCard = (project) => {
+          const card = document.createElement("article");
+          card.className = "project-card";
+
+          const cardHeader = document.createElement("header");
+          cardHeader.className = "project-card__header";
+          cardHeader.appendChild(createTextElement("h3", "project-card__name", project.name));
+          cardHeader.appendChild(createTextElement("p", "project-card__owner", `Owner: ${project.owner}`));
+
+          const metadata = document.createElement("dl");
+          metadata.className = "project-card__metadata";
+          metadata.append(
+            createMetadataItem("Status", project.status, "project-card__value project-card__status status-badge"),
+            createMetadataItem("Priority", project.priority, "project-card__value project-card__priority priority-badge")
+          );
+
+          const activity = document.createElement("div");
+          activity.className = "project-card__activity";
+          activity.append(
+            createTextElement("h4", "project-card__label", "Recent activity"),
+            createTextElement("p", "project-card__activity-text", project.recentActivity)
+          );
+
+          card.append(cardHeader, metadata, activity);
+          return card;
+        };
+
+        const validateProjects = (payload) => {
+          if (!payload || typeof payload !== "object" || !Array.isArray(payload.projects)) {
+            throw new Error("The project data must contain a top-level projects array.");
+          }
+
+          const invalidProject = payload.projects.find((project) => (
+            !project ||
+            typeof project !== "object" ||
+            requiredFields.some((field) => typeof project[field] !== "string" || project[field].trim() === "")
+          ));
+
+          if (invalidProject) {
+            throw new Error("One or more project records are missing required fields.");
+          }
+
+          return payload.projects;
+        };
+
+        const renderProjects = (projects) => {
+          projectList.replaceChildren();
+          projects.forEach((project) => projectList.appendChild(createProjectCard(project)));
+          projectCount.textContent = `${projects.length} ${projects.length === 1 ? "project" : "projects"}`;
+
+          setStateVisibility(loadingState, false);
+          setStateVisibility(errorState, false);
+          setStateVisibility(emptyState, projects.length === 0);
+          setStateVisibility(projectList, projects.length > 0);
+        };
+
+        const showError = (message) => {
+          setStateVisibility(loadingState, false);
+          setStateVisibility(emptyState, false);
+          setStateVisibility(projectList, false);
+          setStateVisibility(errorState, true);
+          projectCount.textContent = "";
+          errorMessage.textContent = message;
+        };
+
+        const loadProjects = async () => {
+          try {
+            const response = await fetch("project-data.json", { cache: "no-store" });
+            if (!response.ok) {
+              throw new Error(`Project data request failed with status ${response.status}.`);
+            }
+
+            const projects = validateProjects(await response.json());
+            renderProjects(projects);
+          } catch (error) {
+            showError(error instanceof Error ? error.message : "An unexpected error occurred while loading project data.");
+          }
+        };
+
+        loadProjects();
+      })();
+    </script>
+  </body>
+</html>
